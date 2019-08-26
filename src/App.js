@@ -3,6 +3,7 @@ import { Input, Select, Modal, Card as AntdCard } from "antd";
 import { ActivityIndicator, Card, WhiteSpace, NavBar } from "antd-mobile";
 import Axios from "axios";
 import NoImage from "./download.png";
+import { beautifyDirtyUrl, capitalizeFirstLetter } from "./helper";
 
 const { Search } = Input;
 const { Option } = Select;
@@ -50,7 +51,11 @@ function App() {
         <React.Fragment key={url}>
           <Card
             onClick={async () => {
-              setCurrentProductData({ brand, title, url });
+              setCurrentProductData({
+                brand,
+                title,
+                url
+              });
               await computeAllergy(url);
             }}
           >
@@ -152,6 +157,16 @@ function App() {
         } else {
           setAllergies(res.data.allergies);
         }
+        if (currentProductData.url !== url) {
+          const splittedURL = url.split("/");
+          const indexOfProductString = splittedURL.indexOf("products");
+          setCurrentProductData({
+            url,
+            brand: capitalizeFirstLetter(splittedURL[indexOfProductString + 1]),
+            title: beautifyDirtyUrl(splittedURL[indexOfProductString + 2])
+          });
+        }
+        // setCurrentProductData(title:)
         setIsLoading(false);
         setImageURL(image);
         setDisplayMode(DISPLAY_MODE_ALLERGY);
