@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Input, Select, Modal } from "antd";
+import { Input, Select, Modal, Card as AntdCard } from "antd";
 import { ActivityIndicator, Card, WhiteSpace, NavBar } from "antd-mobile";
 import Axios from "axios";
 
@@ -18,11 +18,12 @@ function showErrorModal(message) {
   });
 }
 
-const BACKEND_URL = "https://us-central1-anti-allergy-server.cloudfunctions.net/app";
+const BACKEND_URL = "http://localhost:5000/anti-allergy-server/us-central1/app";
 const SEARCH_MODE_QUERY = "QUERY";
 const SEARCH_MODE_FILTER = "FILTER";
 const DISPLAY_MODE_PRODUCT = "PRODUCT";
 const DISPLAY_MODE_ALLERGY = "ALLERGY";
+const NO_ALLERGY = "NO_ALLERGY";
 
 function App() {
   const [searchMode, setSearchMode] = useState(SEARCH_MODE_QUERY);
@@ -31,6 +32,7 @@ function App() {
   const [allergies, setAllergies] = useState([]);
   const [searchBar, setSearchBar] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [currentProductURL, setCurrentProductURL] = useState("");
 
   function handleUnknownHTTPError(error) {
     const { response } = error;
@@ -56,6 +58,34 @@ function App() {
         </React.Fragment>
       ));
     } else {
+      if (allergies.length > 0 && allergies[0] === NO_ALLERGY) {
+        return (
+          <React.Fragment>
+            <AntdCard
+              style={{
+                width: "80vw",
+                maxWidth: 0.8 * 700,
+                backgroundColor: "#ead4d7",
+                color: "rgba(0,0,0,0.7)",
+                margin: "auto"
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  textAlign: "center"
+                }}
+              >
+                <h2>No allergic ingredients found :)</h2>
+              </div>
+            </AntdCard>
+            <h2 style={{ marginTop: 12 }}> Visit the website </h2>
+            <a href={currentProductURL}> {currentProductURL} </a>
+          </React.Fragment>
+        );
+      }
       return (
         <React.Fragment>
           <h2 style={{ marginTop: 12 }}> Allergic Ingredients</h2>
@@ -71,6 +101,8 @@ function App() {
               </React.Fragment>
             );
           })}
+          <h2 style={{ marginTop: 12 }}> Visit the website </h2>
+          <a href={currentProductURL}> {currentProductURL} </a>
         </React.Fragment>
       );
     }
@@ -95,9 +127,15 @@ function App() {
       setIsLoading(true);
       const res = await Axios.post(`${BACKEND_URL}/compute`, { url });
       if (res.data) {
-        setAllergies(res.data.allergies);
+        const { allergies } = res.data;
+        if (allergies.length < 1) {
+          setAllergies([NO_ALLERGY]);
+        } else {
+          setAllergies(res.data.allergies);
+        }
         setIsLoading(false);
         setDisplayMode(DISPLAY_MODE_ALLERGY);
+        setCurrentProductURL(url);
       }
     } catch (error) {
       handleUnknownHTTPError(error);
@@ -114,10 +152,11 @@ function App() {
       <Option value={SEARCH_MODE_FILTER}> URL </Option>
     </Select>
   );
-
+  console.log(searchBar, "searchBar");
   return (
     <React.Fragment>
       <NavBar
+        style={{ maxWidth: 700, margin: "auto" }}
         mode="dark"
         leftContent={
           products.length > 0 && displayMode === DISPLAY_MODE_ALLERGY
@@ -152,10 +191,10 @@ function App() {
           onSearch={value => {
             if (searchMode === SEARCH_MODE_FILTER) {
               computeAllergy(value);
+              setSearchBar("");
             } else if (searchMode === SEARCH_MODE_QUERY) {
               queryProducts(value);
             }
-            setSearchBar("");
           }}
           enterButton="Search"
           size="large"
