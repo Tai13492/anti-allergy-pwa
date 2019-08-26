@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Input, Select, Modal, Card as AntdCard } from "antd";
 import { ActivityIndicator, Card, WhiteSpace, NavBar } from "antd-mobile";
 import Axios from "axios";
+import NoImage from "./download.png";
 
 const { Search } = Input;
 const { Option } = Select;
@@ -18,7 +19,8 @@ function showErrorModal(message) {
   });
 }
 
-const BACKEND_URL = "http://localhost:5000/anti-allergy-server/us-central1/app";
+const BACKEND_URL =
+  "https://us-central1-anti-allergy-server.cloudfunctions.net/app";
 const SEARCH_MODE_QUERY = "QUERY";
 const SEARCH_MODE_FILTER = "FILTER";
 const DISPLAY_MODE_PRODUCT = "PRODUCT";
@@ -32,7 +34,8 @@ function App() {
   const [allergies, setAllergies] = useState([]);
   const [searchBar, setSearchBar] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [currentProductURL, setCurrentProductURL] = useState("");
+  const [currentProductData, setCurrentProductData] = useState({});
+  const [imageURL, setImageURL] = useState("");
 
   function handleUnknownHTTPError(error) {
     const { response } = error;
@@ -47,6 +50,7 @@ function App() {
         <React.Fragment key={url}>
           <Card
             onClick={async () => {
+              setCurrentProductData({ brand, title, url });
               await computeAllergy(url);
             }}
           >
@@ -58,16 +62,31 @@ function App() {
         </React.Fragment>
       ));
     } else {
-      if (allergies.length > 0 && allergies[0] === NO_ALLERGY) {
-        return (
-          <React.Fragment>
+      return (
+        <React.Fragment>
+          <AntdCard
+            cover={<img src={imageURL ? imageURL : NoImage} alt="" />}
+            style={{
+              width: "60vw",
+              maxWidth: 0.6 * 400,
+              margin: "auto",
+              marginTop: 16
+            }}
+          >
+            <AntdCard.Meta
+              title={currentProductData.brand}
+              description={currentProductData.title}
+            />
+          </AntdCard>
+          {allergies.length > 0 && allergies[0] === NO_ALLERGY ? (
             <AntdCard
               style={{
                 width: "80vw",
                 maxWidth: 0.8 * 700,
                 backgroundColor: "#ead4d7",
                 color: "rgba(0,0,0,0.7)",
-                margin: "auto"
+                margin: "auto",
+                marginTop: 16
               }}
             >
               <div
@@ -81,28 +100,28 @@ function App() {
                 <h2>No allergic ingredients found :)</h2>
               </div>
             </AntdCard>
-            <h2 style={{ marginTop: 12 }}> Visit the website </h2>
-            <a href={currentProductURL}> {currentProductURL} </a>
-          </React.Fragment>
-        );
-      }
-      return (
-        <React.Fragment>
-          <h2 style={{ marginTop: 12 }}> Allergic Ingredients</h2>
-          {allergies.map(allergy => {
-            return (
-              <React.Fragment key={allergy}>
-                <Card>
-                  <Card.Body>
-                    <h2> {allergy} </h2>
-                  </Card.Body>
-                </Card>
-                <WhiteSpace size="md" />
-              </React.Fragment>
-            );
-          })}
+          ) : (
+            <React.Fragment>
+              <h2 style={{ marginTop: 16, marginBottom: 16 }}>
+                {" "}
+                Allergic Ingredients
+              </h2>
+              {allergies.map(allergy => {
+                return (
+                  <React.Fragment key={allergy}>
+                    <Card style={{ backgroundColor: "#ff4d4f" }}>
+                      <Card.Body>
+                        <h2> {allergy} </h2>
+                      </Card.Body>
+                    </Card>
+                    <WhiteSpace size="md" />
+                  </React.Fragment>
+                );
+              })}
+            </React.Fragment>
+          )}
           <h2 style={{ marginTop: 12 }}> Visit the website </h2>
-          <a href={currentProductURL}> {currentProductURL} </a>
+          <a href={currentProductData.url}> {currentProductData.url} </a>
         </React.Fragment>
       );
     }
@@ -127,15 +146,15 @@ function App() {
       setIsLoading(true);
       const res = await Axios.post(`${BACKEND_URL}/compute`, { url });
       if (res.data) {
-        const { allergies } = res.data;
+        const { allergies, image } = res.data;
         if (allergies.length < 1) {
           setAllergies([NO_ALLERGY]);
         } else {
           setAllergies(res.data.allergies);
         }
         setIsLoading(false);
+        setImageURL(image);
         setDisplayMode(DISPLAY_MODE_ALLERGY);
-        setCurrentProductURL(url);
       }
     } catch (error) {
       handleUnknownHTTPError(error);
@@ -152,7 +171,6 @@ function App() {
       <Option value={SEARCH_MODE_FILTER}> URL </Option>
     </Select>
   );
-  console.log(searchBar, "searchBar");
   return (
     <React.Fragment>
       <NavBar
