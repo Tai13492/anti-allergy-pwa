@@ -1,24 +1,27 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { SearchBar } from "antd-mobile";
+// Button, WhiteSpace, WingBlank
+// import Axios from "axios";
+import "./App.css";
 
 function App() {
+  // useEffect(() => {
+  //   const testFetch = async () => {
+  //     try {
+  //       const res = await Axios.get(
+  //         "https://www.skincarisma.com/products/shiseido/anessa-perfect-uv-sunscreen-aqua-booster-spf-50-pa/ingredient_list"
+  //       );
+  //       console.log(res, "response");
+  //     } catch (error) {
+  //       const { response } = error;
+  //       console.log(response, "error.response");
+  //     }
+  //   };
+  //   testFetch();
+  // }, []);
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <SearchBar placeholder="Search" />
     </div>
   );
 }
